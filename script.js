@@ -9,22 +9,32 @@ convertBtn.onclick = async () => {
   const file = uploader.files[0];
   if (!file) return alert("파일을 선택하세요");
 
-  status.innerText = "로딩 중...";
-  if (!ffmpeg.isLoaded()) await ffmpeg.load();
+  status.innerText = "ffmpeg 로딩 중...";
+  convertBtn.disabled = true;
 
-  const inputName = "input." + file.name.split('.').pop();
-  const outputName = "output.wav";
+  try {
+    if (!ffmpeg.isLoaded()) await ffmpeg.load();
 
-  ffmpeg.FS("writeFile", inputName, await fetchFile(file));
-  await ffmpeg.run("-i", inputName, outputName);
-  const data = ffmpeg.FS("readFile", outputName);
+    status.innerText = "변환 중...";
+    const inputExt = file.name.split('.').pop();
+    const inputName = `input.${inputExt}`;
+    const outputName = `output.wav`;
 
-  const url = URL.createObjectURL(new Blob([data.buffer], { type: "audio/wav" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "converted.wav";
-  a.click();
+    ffmpeg.FS('writeFile', inputName, await fetchFile(file));
+    await ffmpeg.run('-i', inputName, outputName);
+    const data = ffmpeg.FS('readFile', outputName);
 
-  status.innerText = "변환 완료!";
+    const url = URL.createObjectURL(new Blob([data.buffer], { type: 'audio/wav' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'converted.wav';
+    a.click();
+
+    status.innerText = "변환 완료!";
+  } catch (err) {
+    console.error(err);
+    status.innerText = "에러 발생 😢 콘솔을 확인해주세요.";
+  } finally {
+    convertBtn.disabled = false;
+  }
 };
-
